@@ -1,0 +1,4 @@
+rootProject.name = "aws-line-bot"
+
+include 'line-bot-event-producer'
+include 'line-bot-event-printer'

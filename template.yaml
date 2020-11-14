@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  aws-line-bot
+
+  Sample SAM Template for aws-line-bot
+
+Parameters:
+  ChannelSecret:
+    Type: String
+
+Globals:
+  Function:
+    Timeout: 20
+
+Resources:
+  LineBotWebhookEventQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      ContentBasedDeduplication: false
+      FifoQueue: true
+      ReceiveMessageWaitTimeSeconds: 20
+      MessageRetentionPeriod: 345600
+      VisibilityTimeout: 30
+
+  LineBotEventProducer:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: line-bot-event-producer
+      Handler: aws.line.bot.eventproducer.Handler::handleRequest
+      Runtime: java11
+      Timeout: 30
+      MemorySize: 256
+      Policies:
+        - arn:aws:iam::aws:policy/AmazonSQSFullAccess
+      Environment:
+        Variables:
+          WEBHOOK_EVENT_QUEUE_SQS_URL: !Ref LineBotWebhookEventQueue
+          CHANNEL_SECRET: !Ref ChannelSecret
+      Events:
+        HelloWorld:
+          Type: Api
+          Properties:
+            Path: /webhook
+            Method: post
+
+  LineBotEventPrinter:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: line-bot-event-printer
+      Handler: aws.line.bot.eventprinter.Handler::handleRequest
+      Runtime: java11
+      Timeout: 30
+      Policies:
+        - arn:aws:iam::aws:policy/AmazonSQSReadOnlyAccess
+      Events:
+        SQSTrigger:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt LineBotWebhookEventQueue.Arn
+            BatchSize: 1
+            Enabled: true
+
+Outputs:
+  LineBotEventProducer:
+    Description: "LINE Bot Webhook Endpoint"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/webhook/"
+  LineBotEventPrinter:
+    Description: "LINE Bot SQS Queued Event printer"
+    Value: !GetAtt LineBotEventPrinter.Arn
+  LineBotWebhookEventQueue:
+    Description: "FIFO queue for temporary storage of webhook events, Provide a message group ID for each sending user to guarantee the order"
+    Value: !GetAtt LineBotWebhookEventQueue.Arn

@@ -1,0 +1,8 @@
+dependencies {
+    implementation 'com.amazonaws:aws-lambda-java-core:1.2.0'
+    implementation 'com.amazonaws:aws-lambda-java-events:3.1.0'
+
+    implementation 'com.linecorp.bot:line-bot-model:4.2.0'
+    
+    testImplementation 'junit:junit:4.13.1'
+}

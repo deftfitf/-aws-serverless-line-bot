@@ -1,0 +1,14 @@
+# Gradle
+.gradle
+**/build/
+!src/**/build/
+!gradle-wrapper.jar
+.gradletasknamecache
+
+# IntelliJ IDEA
+.idea
+
+# AWS
+.aws-sam
+samconfig.toml
+
